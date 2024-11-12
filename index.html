@@ -9,7 +9,9 @@
   <body>
     <div id="root">
       <body>
-        <h2>Geolocation</h2>
+        <h2>Geolocation Service</h2>
+        <p>status</p>
+        <hr></hr>
         
         <form action="/action_page.php">
           <label for="state">State</label><br>
@@ -17,16 +19,17 @@
           <label for="city">City</label><br>
           <input type="text" id="city" name="city" value="Perth"><br><br>
           <input type="submit" value="Retrieve">
-          <input type="submit" value="Get coordinates">
           <input type="submit" value="Delete">
         </form> 
         
-        <h3>Has coordinates? false</h3>
+        <p>Exists? false</p>
         <p>lat:</p>
         <p>lon:</p>
+
+        <hr></hr>
         
         <button type="button" onclick="alert('Hello World!')">Reinitialise DB</button>
         <button type="button" onclick="alert('Hello World!')">Reinitialise  using MockData</button>
-        </body>/div>
+        </body>
   </body>
 </html>

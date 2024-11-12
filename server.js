@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require("body-parser");
+const path = require('path');
 
 // Initialize the app
 const app = express();
@@ -24,7 +25,7 @@ app.use((req, res, next) => {
   try {
     //await sequelize.sync(); DATABASE SYNC
     app.get('/', (req, res) => {
-      res.send(`Server Running on http://localhost:${port}`)});
+      res.sendFile(path.join(__dirname,'index.html'))});
     app.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);
     });
