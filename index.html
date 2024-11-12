@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./public/Weather.me.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather.me</title>
+  </head>
+  <body>
+    <div id="root">
+      <body>
+        <h2>Geolocation</h2>
+        
+        <form action="/action_page.php">
+          <label for="state">State</label><br>
+          <input type="text" id="state" name="state" value="WA"><br>
+          <label for="city">City</label><br>
+          <input type="text" id="city" name="city" value="Perth"><br><br>
+          <input type="submit" value="Retrieve">
+          <input type="submit" value="Get coordinates">
+          <input type="submit" value="Delete">
+        </form> 
+        
+        <h3>Has coordinates? false</h3>
+        <p>lat:</p>
+        <p>lon:</p>
+        
+        <button type="button" onclick="alert('Hello World!')">Reinitialise DB</button>
+        <button type="button" onclick="alert('Hello World!')">Reinitialise  using MockData</button>
+        </body>/div>
+  </body>
+</html>

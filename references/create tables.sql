@@ -1,0 +1,29 @@
+
+CREATE TABLE countries (
+    iso3 VARCHAR(3) PRIMARY KEY,
+    iso2 VARCHAR(2),
+    country_name VARCHAR(255),
+	createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+    
+    CREATE TABLE states (
+    state_id INT AUTO_INCREMENT PRIMARY KEY,
+    state_name VARCHAR(255),
+    country VARCHAR(3),
+    FOREIGN KEY (country) REFERENCES geolocation_database.countries(iso3),
+	createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE cities (
+    city_id INT AUTO_INCREMENT PRIMARY KEY,
+    city_name VARCHAR(255),
+    state_id INT,
+    FOREIGN KEY (state_id) REFERENCES geolocation_database.states(state_id),
+    lat DECIMAL(30,7),
+    lon DECIMAL(30,7),
+	createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+    
