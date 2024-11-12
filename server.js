@@ -1,6 +1,10 @@
 const express = require('express');
 const bodyParser = require("body-parser");
 const path = require('path');
+const sequelize = require('./config/database');
+const countries =  require('./models/countries');
+const states =  require('./models/states');
+const cities =  require('./models/cities');
 
 // Initialize the app
 const app = express();
@@ -23,7 +27,6 @@ app.use((req, res, next) => {
 
 (async () => {
   try {
-    //await sequelize.sync(); DATABASE SYNC
     app.get('/', (req, res) => {
       res.sendFile(path.join(__dirname,'index.html'))});
     app.listen(port, () => {
@@ -33,3 +36,20 @@ app.use((req, res, next) => {
     console.error('Unable to connect to the database:', err.message);
   }
 })();
+
+sequelize.sync({ force:false})
+.then(() => {
+  console.log('db and tables created');
+})
+.catch(err => console.log('error synching tables', err));
+
+//routes
+app.post('/geolocate', async (req, res) => {
+  try {
+    console.log('try');
+    res.status(201).json(console.log('try'));
+  }
+  catch (error) {
+    res.status(400).json({error:error.message});
+  }
+});
