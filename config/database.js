@@ -1,4 +1,4 @@
-const { Sequelize } = require("sequelize");
+import Sequelize from "sequelize";
 
 const sequelize = new Sequelize("geolocation_database", "root", "29121995", {
   host: "localhost",
@@ -15,4 +15,4 @@ const sequelize = new Sequelize("geolocation_database", "root", "29121995", {
     }
   })();
 
-  module.exports = sequelize;
+export default sequelize;

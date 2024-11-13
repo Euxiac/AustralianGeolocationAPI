@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import * as geocodingController from '../controllers/geocodingController.js';
+
 const router = express.Router();
-const geocodingController = require('../controllers/geocodingController');
 
-router.get('/GEO/GetCoords', geocodingController.fetchCoordinatesFromQuery);
+//router.get('/GetCoords', fetchTest.fetchCoordinatesFromQuery);
+router.get('/test2', geocodingController.fetchTest);
 
-module.exports = router;
+export default router; 

@@ -1,14 +1,20 @@
-const express = require('express');
-const bodyParser = require("body-parser");
-const path = require('path');
-const sequelize = require('./config/database');
-const countries =  require('./models/countries');
-const states =  require('./models/states');
-const cities =  require('./models/cities');
+import express from 'express';
+import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import sequelize from './config/database.js';
+import geoCodingRoutes from './routes/geocodingRoutes.js';
+import countries from './models/countries.js';
+import states from './models/states.js';
+import cities from './models/cities.js';
+
+//allow __dir name to be used
+const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
+const __dirname = path.dirname(__filename); // get the name of the directory
 
 // Initialize the app
 const app = express();
-const port = 3000;
+const port = 8000;
 
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
@@ -43,13 +49,4 @@ sequelize.sync({ force:false})
 })
 .catch(err => console.log('error synching tables', err));
 
-//routes
-app.post('/geolocate', async (req, res) => {
-  try {
-    console.log('try');
-    res.status(201).json(console.log('try'));
-  }
-  catch (error) {
-    res.status(400).json({error:error.message});
-  }
-});
+app.use('/geo', geoCodingRoutes);
