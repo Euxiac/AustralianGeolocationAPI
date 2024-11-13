@@ -3,7 +3,9 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sequelize from './config/database.js';
-import geoCodingRoutes from './routes/geocodingRoutes.js';
+import geocodingRoutes from './routes/geocodingRoutes.js';
+import locationRoutes from './routes/locationRoutes.js'
+import databaseRoutes from './routes/databaseRoutes.js'
 import countries from './models/countries.js';
 import states from './models/states.js';
 import cities from './models/cities.js';
@@ -49,4 +51,6 @@ sequelize.sync({ force:false})
 })
 .catch(err => console.log('error synching tables', err));
 
-app.use('/geo', geoCodingRoutes);
+app.use('/geo', geocodingRoutes);
+app.use('/location', locationRoutes);
+app.use('/database', databaseRoutes);
