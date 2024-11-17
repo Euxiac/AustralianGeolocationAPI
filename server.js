@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sequelize from './config/database.js';
-import geocodingRoutes from './routes/geocodingRoutes.js';
 import locationRoutes from './routes/locationRoutes.js'
 import databaseRoutes from './routes/databaseRoutes.js'
 import apiRoutes from './routes/apiRoutes.js'
@@ -78,7 +77,6 @@ app.post('/call-external-api', async (req, res) => {
   }
 });
 
-app.use('/geo', geocodingRoutes);
 app.use('/location', locationRoutes);
 app.use('/database', databaseRoutes);
 app.use('/api', apiRoutes);
