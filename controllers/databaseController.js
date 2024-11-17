@@ -158,8 +158,14 @@ export const addEntry = async (req, res) => {
       return res.status(400).json({ message: "Body parameters are invalid" });
     }
 
+    let result;
+    if(table === 'city'){
+    result = await databaseService.CityEntryService(table, bodyParams, true);
+    }
+    else {
     // Call the generalized service for adding entries
-    const result = await databaseService.addEntryService(table, bodyParams);
+    result = await databaseService.addEntryService(table, bodyParams);
+    }
 
     if (result.success) {
       return res.status(200).json({
@@ -184,8 +190,14 @@ export const deleteEntry = async (req, res) => {
       return res.status(400).json({ message: "Body parameters are invalid" });
     }
 
+    let result;
+    if(table === 'city'){
+     result = await databaseService.CityEntryService(table, bodyParams, false);
+    }
+    else {
     // Call the generalized service for adding entries
-    const result = await databaseService.deleteEntryService(table, bodyParams);
+    result = await databaseService.deleteEntryService(table, bodyParams);
+    }
 
     if (result.success) {
       return res.status(200).json({
