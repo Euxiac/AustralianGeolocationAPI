@@ -4,7 +4,8 @@ import sequelize from '../config/database.js';
 const cities = sequelize.define('cities', {
     city_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
+        primaryKey: true
     },
     city_name: {
         type: DataTypes.STRING,

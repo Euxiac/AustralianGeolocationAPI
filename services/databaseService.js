@@ -1,5 +1,8 @@
 import sequelize from "../config/database.js";
-import axios from 'axios';
+import axios from "axios";
+import countries from "../models/countries.js";
+import states from "../models/states.js";
+import cities from "../models/cities.js";
 
 export const postUpdateCoords = async (country, state, city, lat, lon) => {
   try {
@@ -102,11 +105,11 @@ export const postEmpty = async () => {
         DELETE FROM cities;
       `);
 
-      await sequelize.query(`
+    await sequelize.query(`
         DELETE FROM states;
       `);
 
-      await sequelize.query(`
+    await sequelize.query(`
         DELETE FROM countries;
       `);
     return "Tables emptied";
@@ -159,10 +162,101 @@ export const postPopulateWithMockData = async () => {
 
 export const postPopulate = async () => {
   try {
-    
-
     return "Populated data successfully!";
   } catch (error) {
     throw new Error(`Error creating tables: ${error.message}`);
+  }
+};
+
+export const addCountryService = async (data) => {
+  try {
+    const iso3 = data.iso3;
+    const iso2 = data.iso2;
+    const country_name = data.country_name;
+    // Check if the country already exists in the database
+    const existingCountry = await countries.findOne({
+      where: { iso3: iso3, iso2: iso2, country_name: country_name },
+    });
+
+    if (existingCountry) {
+      return { success: false, message: "Country already exists" };
+    }
+
+    // Add the country to the database
+    const newCountry = await countries.create({
+      iso3: iso3,
+      iso2: iso2,
+      country_name: country_name,
+    });
+
+    return { success: true, data: newCountry };
+  } catch (error) {
+    console.error("Error in addCountryService:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const addStateService = async (data) => {
+  try {
+    const state_name = data.state_name;
+    const country = data.country;
+    const existingState = await states.findOne({
+      where: { state_name: state_name, country: country },
+    });
+
+    if (existingState) {
+      return { success: false, message: "State already exists" };
+    }
+
+    const newState = await states.create({
+      state_name: state_name,
+      country: country,
+    });
+
+    return { success: true, data: newState };
+  } catch (error) {
+    console.error("Error in addStateService:", error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const addCityService = async (data) => {
+  try {
+    const city_name = data.city_name;
+    const country_iso3 = data.country_iso3;
+    const state_name = data.state_name;
+    const stateQuery = await states.findOne({
+      where: { country: country_iso3, state_name: state_name },
+    });
+    const state_id = stateQuery ? stateQuery.state_id : null;
+    const lat = data.lat;
+    const lon = data.lon;
+    const existingCity = await cities.findOne({
+      where: { city_name: city_name, state_id: state_id },
+    });
+
+    if (existingCity) {
+      return { success: false, message: "City already exists" };
+    }
+
+    let newCity;
+    if (!lat & !lon) {
+      newCity = await cities.create({
+        city_name: city_name,
+        state_id: state_id,
+      });
+    } else {
+      newCity = await cities.create({
+        city_name: city_name,
+        state_id: state_id,
+        lat:lat,
+        lon:lon,
+      });
+    }
+
+    return { success: true, data: newCity };
+  } catch (error) {
+    console.error("Error in addCity:", error);
+    return { success: false, error: error.message };
   }
 };

@@ -5,6 +5,8 @@ const countries = sequelize.define('countries', {
     iso3: {
         type: DataTypes.STRING,
         allowNull: false,
+        unique: true,
+        primaryKey: true
     },
     country_name: {
         type: DataTypes.STRING,

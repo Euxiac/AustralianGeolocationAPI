@@ -2,9 +2,10 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/database.js';
 
 const states = sequelize.define('states', {
-    state_ID: {
+    state_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
+        primaryKey: true
     },
     state_name: {
         type: DataTypes.STRING,
@@ -13,11 +14,7 @@ const states = sequelize.define('states', {
     country: {
         type: DataTypes.STRING,
         allowNull: false,
-    },
-    state_code: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
+    }
 });
 
 export default states;

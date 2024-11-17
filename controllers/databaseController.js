@@ -1,4 +1,6 @@
 import * as databaseService from "../services/databaseService.js";
+import * as apiController from "../controllers/apiController.js";
+import * as apiService from "../services/apiService.js";
 import countries from "../models/countries.js";
 import states from "../models/states.js";
 import cities from "../models/cities.js";
@@ -48,10 +50,10 @@ export const emptyTables = async (req, res) => {
 
 export const redrawTables = async (req, res) => {
   try {
-    console.log('REDRAWING TABLES-----------------------');
+    console.log("REDRAWING TABLES-----------------------");
     const data = await databaseService.postRedraw();
     //res.json({ data });
-    console.log('TABLES REDRAWN-----------------------');
+    console.log("TABLES REDRAWN-----------------------");
   } catch (error) {
     res.status(500).json({ message: `test ${error.message}` });
   }
@@ -77,15 +79,21 @@ export const populateFromAPI = async (req, res) => {
 
 export const areTablesEmpty = async (req, res) => {
   try {
-    console.log('CHECKING TABLES ARE EMPTY-----------------------');
+    console.log("CHECKING TABLES ARE EMPTY-----------------------");
     const countriesIsEmpty = (await countries.count()) === 0;
     const statesIsEmpty = (await states.count()) === 0;
     const citiesIsEmpty = (await cities.count()) === 0;
 
-    if (countriesIsEmpty & statesIsEmpty & citiesIsEmpty) {console.log('tables empty'); return true} else {console.log('tables not empty'); return false}
+    if (countriesIsEmpty & statesIsEmpty & citiesIsEmpty) {
+      console.log("tables empty");
+      return true;
+    } else {
+      console.log("tables not empty");
+      return false;
+    }
     // Send the response as a boolean
     //res.json({ countriesIsEmpty, statesIsEmpty, citiesIsEmpty });
-    console.log('CHECKED TABLES ARE EMPTY-----------------------')
+    console.log("CHECKED TABLES ARE EMPTY-----------------------");
   } catch (error) {
     console.error("Error checking if tables are empty:", error);
     res.status(500).json({ message: "Error checking if tables are empty" });
@@ -94,36 +102,36 @@ export const areTablesEmpty = async (req, res) => {
 
 export const redrawTablesWithData = async (req, res) => {
   try {
-    console.log('=== SEQUENCE START ==-----------------------');
+    console.log("=== SEQUENCE START ==-----------------------");
     const dataset = req.params.dataset;
 
     // Redraw tables first
     await redrawTables(req, res);
 
     // Check if tables are empty
-    const tablesEmpty = await areTablesEmpty(req, res); 
+    const tablesEmpty = await areTablesEmpty(req, res);
 
-    let response = ''; 
+    let response = "";
 
     if (tablesEmpty) {
       // Use a switch statement to handle different 'dataset' values
       switch (dataset) {
-        case 'empty':
-          response = 'Tables have not been filled';
+        case "empty":
+          response = "Tables have not been filled";
           break;
 
-        case 'mock':
+        case "mock":
           await populateWithMockData(req, res);
-          response = 'Tables filled with mock data';
+          response = "Tables filled with mock data";
           break;
 
-        case 'true':
+        case "true":
           await populateFromAPI(req, res);
-          response = 'Tables filled with data from API';
+          response = "Tables filled with data from API";
           break;
 
         default:
-          response = 'Invalid data value';
+          response = "Invalid data value";
           break;
       }
 
@@ -131,9 +139,9 @@ export const redrawTablesWithData = async (req, res) => {
       return res.send(response);
     } else {
       // If tables are not empty, return this response
-      return res.send('Tables are already filled');
+      return res.send("Tables are already filled");
     }
-    console.log('=== SEQUENCE END ==-----------------------')
+    console.log("=== SEQUENCE END ==-----------------------");
   } catch (error) {
     console.error("Error redraw tables with data:", error);
     return res.status(500).json({ message: "Error redraw tables with data" });
@@ -141,11 +149,52 @@ export const redrawTablesWithData = async (req, res) => {
 };
 
 // ENTRIES -------------------------------------------------------------------------
-
-export const addCountry = async (req, res) => {
+export const addEntry = async (req, res) => {
   try {
+    const table = req.params.table; // The table name from URL parameter
+    const bodyParams = req.body; // The body parameters
+
+    // Validate input
+    if (!bodyParams) {
+      return res.status(400).json({ message: "Body parameters are invalid" });
+    }
+
+    let result = null;
+
+    // Decide which service to run based on the table name
+    switch (table) {
+      case "country":
+        result = await databaseService.addCountryService(bodyParams);
+        break;
+
+      case "state":
+        result = await databaseService.addStateService(bodyParams);
+        break;
+
+      case "city":
+        result = await databaseService.addCityService(bodyParams);
+        break;
+
+      default:
+        return res
+          .status(400)
+          .json({ message: `Invalid table name: ${table}` });
+    }
+
+    // Handle response based on result
+    if (result && result.success) {
+      return res.status(200).json({
+        message: `${table} added successfully`,
+        data: result.data,
+      });
+    } else {
+      // Handle failure
+      return res.status(500).json({
+        message: result?.message || `Failed to add ${table}`,
+      });
+    }
   } catch (error) {
-    console.error("Error redraw tables with data:", error);
-    return res.status(500).json({ message: "Error redraw tables with data" });
+    console.error("Error in addEntry controller:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
