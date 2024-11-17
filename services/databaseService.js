@@ -168,22 +168,21 @@ export const postPopulate = async () => {
   }
 };
 
+const checkEntryExists = async (model, uniqueFields, data) => {
+  const query = uniqueFields.reduce((acc, field) => {
+    acc[field] = data[field];
+    return acc;
+  }, {});
+  const existingEntry = await model.findOne({ where: query });
+  return existingEntry;
+};
+
 export const addEntryService = async (entity, data) => {
   try {
     let model;
     let uniqueFields;
     let createData;
     let state_id;
-
-    // Helper function to check if an entry exists
-    const checkEntryExists = async (model, uniqueFields, data) => {
-      const query = uniqueFields.reduce((acc, field) => {
-        acc[field] = data[field];
-        return acc;
-      }, {});
-      const existingEntry = await model.findOne({ where: query });
-      return existingEntry;
-    };
 
     switch (entity) {
       case "country":
@@ -293,6 +292,11 @@ export const deleteEntryService = async (entity, data) => {
         co.iso3 = "${entityData.iso3}"
         AND co.country_name = "${entityData.country_name}"
         `;
+        // Check if state already exists
+        const existingState = await checkEntryExists(model, uniqueFields, data);
+        if (existingState) {
+          return { success: false, message: "State already exists" };
+        }
         break;
 
       case "state":
@@ -310,6 +314,7 @@ export const deleteEntryService = async (entity, data) => {
         st.state_name = "${entityData.state_name}"
         AND st.country = "${entityData.country}"
         `;
+        
         break;
 
       case "city":
@@ -338,6 +343,12 @@ export const deleteEntryService = async (entity, data) => {
         }
 
         state_id = stateQuery.state_id
+
+        // Check if the city already exists using the state_id
+        const existingCity = await checkEntryExists(model, uniqueFields, { ...data, state_id });
+        if (!existingCity) {
+          return { success: false, message: "City doesn't exists" };
+        }
 
         entityData = {
           city_name: data.city_name,
