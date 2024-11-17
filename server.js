@@ -6,9 +6,11 @@ import sequelize from './config/database.js';
 import geocodingRoutes from './routes/geocodingRoutes.js';
 import locationRoutes from './routes/locationRoutes.js'
 import databaseRoutes from './routes/databaseRoutes.js'
+import apiRoutes from './routes/apiRoutes.js'
 import countries from './models/countries.js';
 import states from './models/states.js';
 import cities from './models/cities.js';
+import axios from 'axios';
 
 //allow __dir name to be used
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
@@ -51,6 +53,32 @@ sequelize.sync({ force:false})
 })
 .catch(err => console.log('error synching tables', err));
 
+app.post('/call-external-api', async (req, res) => {
+  try {
+    // The external API URL
+    const apiUrl = 'https://countriesnow.space/api/v0.1/countries/states';
+
+    // Raw body data you want to send
+    const requestBody = {
+      country: 'Australia'
+    };
+
+    // Send the POST request with raw body data
+    const response = await axios.post(apiUrl, requestBody, {
+      headers: {
+        'Content-Type': 'application/json', // Ensure that the API understands the body format
+      }
+    });
+
+    // Send the response from the external API back to the client
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error making API call:', error);
+    res.status(500).send('Error communicating with external API');
+  }
+});
+
 app.use('/geo', geocodingRoutes);
 app.use('/location', locationRoutes);
 app.use('/database', databaseRoutes);
+app.use('/api', apiRoutes);

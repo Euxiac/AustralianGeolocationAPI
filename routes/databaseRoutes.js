@@ -22,11 +22,11 @@ router.post('/tables/redraw', databaseController.redrawTables);
 router.post('/tables/empty', databaseController.emptyTables)
 //deletes all data inside tables
 
-router.post('/tables/populate=mock', databaseController.populateWithMockData);
+router.post('/tables/populate-mock', databaseController.populateWithMockData);
 //maybe check is tables are empty?
 //adds mock data to tables
 
-router.post('/tables/populate=true', databaseController.populate);
+router.post('/tables/populate-true', databaseController.populateFromAPI);
 //maybe check is tables are empty?
 //makes call and adds actual data
 

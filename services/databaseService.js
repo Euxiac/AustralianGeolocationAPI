@@ -1,4 +1,5 @@
 import sequelize from "../config/database.js";
+import axios from 'axios';
 
 export const postUpdateCoords = async (country, state, city, lat, lon) => {
   try {

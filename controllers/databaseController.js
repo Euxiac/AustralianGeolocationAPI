@@ -52,9 +52,8 @@ export const updateCoords = async (req, res) => {
       res.status(500).json({message: `test ${error.message}`});
     }
   };
-
   
-  export const populate = async (req, res) => {
+  export const populateFromAPI = async (req, res) => {
     try {
       const data = await databaseService.postPopulate();
       res.json({data});
