@@ -4,53 +4,6 @@ import countries from "../models/countries.js";
 import states from "../models/states.js";
 import cities from "../models/cities.js";
 
-export const postUpdateCoords = async (country, state, city, lat, lon) => {
-  try {
-    const [results] = await sequelize.query(`
-        UPDATE cities ci JOIN states st
-        ON ci.state_id = st.state_id
-  
-        JOIN countries co
-        ON st.country = co.iso3
-
-        SET 
-        ci.lat = "${lat}", 
-        ci.lon = "${lon}"
-        WHERE 
-        co.iso3 = "${country}"
-        AND st.state_name = "${state}"
-        AND ci.city_name = "${city}"
-        ;
-      `);
-    return results;
-  } catch (error) {
-    throw new Error(`Error fetching test data: ${error.message}`);
-  }
-};
-
-export const postDeleteCity = async (country, state, city) => {
-  try {
-    const [results] = await sequelize.query(`
-        DELETE ci
-        FROM cities ci
-
-        JOIN states st
-        ON ci.state_id = st.state_id
-
-        JOIN countries co
-        ON st.country = co.iso3
-
-        WHERE 
-        co.iso3 = "${country}"
-        AND st.state_name = "${state}"
-        AND ci.city_name = "${city}";
-      `);
-    return results;
-  } catch (error) {
-    throw new Error(`Error fetching test data: ${error.message}`);
-  }
-};
-
 export const postRedraw = async () => {
   try {
     // First, drop the existing tables
@@ -181,7 +134,8 @@ const getModelAndQueryData = async (entity, data) => {
   let model;
   let uniqueFields;
   let createData;
-  let query;
+  let updateQuery;
+  let deleteQuery;
 
   switch (entity) {
     case "country":
@@ -192,7 +146,9 @@ const getModelAndQueryData = async (entity, data) => {
         iso2: data.iso2,
         country_name: data.country_name,
       };
-      query = `
+      updateQuery =`
+      `;
+      deleteQuery = `
       DELETE FROM countries
       WHERE iso3 = "${data.iso3}" AND country_name = "${data.country_name}";
     `;
@@ -205,7 +161,9 @@ const getModelAndQueryData = async (entity, data) => {
         state_name: data.state_name,
         country: data.country,
       };
-      query = `
+      updateQuery =`
+      `;
+      deleteQuery = `
           DELETE FROM states
           WHERE state_name = "${data.state_name}" AND country = "${data.country}";
         `;
@@ -215,7 +173,7 @@ const getModelAndQueryData = async (entity, data) => {
       return { error: `Invalid entity: ${entity}` };
   }
 
-  return { model, uniqueFields, createData, query: query };
+  return { model, uniqueFields, createData, updateQuery: updateQuery, deleteQuery: deleteQuery };
 };
 
 export const addEntryService = async (entity, data) => {
@@ -251,10 +209,10 @@ export const addEntryService = async (entity, data) => {
   }
 };
 
-export const deleteEntryService = async (entity, data) => {
+export const updateEntryService = async (entity, data) => {
   try {
     // Get model, unique fields, and query for deletion
-    let { model, uniqueFields, query, error } = await getModelAndQueryData(
+    let { model, uniqueFields, updateQuery, error } = await getModelAndQueryData(
       entity,
       data
     );
@@ -267,7 +225,7 @@ export const deleteEntryService = async (entity, data) => {
     const existingEntry = await checkEntryExists(model, uniqueFields, data);
     if (existingEntry) {
       // Run the delete query
-      const [results] = await sequelize.query(query);
+      const [results] = await sequelize.query(updateQuery);
       return { success: true, results: results };
     } else {
       return {
@@ -283,13 +241,62 @@ export const deleteEntryService = async (entity, data) => {
   }
 };
 
-export const CityEntryService = async (entity, data, additive) => {
+
+export const deleteEntryService = async (entity, data) => {
+  try {
+    // Get model, unique fields, and query for deletion
+    let { model, uniqueFields, deleteQuery, error } = await getModelAndQueryData(
+      entity,
+      data
+    );
+
+    if (error) {
+      return { success: false, message: error };
+    }
+
+    // Check if the entry already exists
+    const existingEntry = await checkEntryExists(model, uniqueFields, data);
+    if (existingEntry) {
+      // Run the delete query
+      const [results] = await sequelize.query(deleteQuery);
+      return { success: true, results: results };
+    } else {
+      return {
+        success: false,
+        message: `${
+          entity.charAt(0).toUpperCase() + entity.slice(1)
+        } doesn't exist`,
+      };
+    }
+  } catch (error) {
+    console.error(`Error in deleteEntryService for ${entity}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const CityEntryService = async (entity, data, operation) => {
   try {
     let model = cities;
-    let uniqueFields= ["city_name", "state_id"];
+    let uniqueFields = ["city_name", "state_id"];
     let createData;
     let state_id;
-    const query = `
+    const updateQuery = `
+        UPDATE cities ci JOIN states st
+        ON ci.state_id = st.state_id
+
+        JOIN countries co
+        ON st.country = co.iso3
+
+        SET 
+        ci.lat = "${data.lat}", 
+        ci.lon = "${data.lon}"
+        WHERE 
+        co.iso3 = "${data.country_iso3}"
+        AND st.state_name = "${data.state_name}"
+        AND ci.city_name = "${data.city_name}"
+        ;
+      `;
+    const deleteQuery = `
         DELETE ci
         FROM cities ci
 
@@ -328,20 +335,6 @@ export const CityEntryService = async (entity, data, additive) => {
 
     state_id = stateQuery.state_id;
 
-    // Check if the city already exists using the state_id
-    const existingCity = await checkEntryExists(model, uniqueFields, {
-      ...data,
-      state_id,
-    });
-    if (additive){
-      if(existingCity){
-        return { success: false, message: "City already exists" };
-      }
-    } else {
-      if(!existingCity){
-        return { success: false, message: "City doesn't exists" };
-      }
-    }
     createData = {
       city_name: data.city_name,
       state_id: state_id,
@@ -349,13 +342,39 @@ export const CityEntryService = async (entity, data, additive) => {
       lon: data.lon,
     };
 
-    // Create the new entry
-    if(additive){
-      const newEntry = await model.create(createData);
-      return { success: true, data: newEntry };
-    }else {
-      const [results] = await sequelize.query(query);
-      return { success: true , results: results};
+    // Check if the city already exists using the state_id
+    const existingCity = await checkEntryExists(model, uniqueFields, {
+      ...data,
+      state_id,
+    });
+
+    switch (operation) {
+      case "add":
+        if (existingCity) {
+          return { success: false, message: "City already exists" };
+        } else {
+          const newEntry = await model.create(createData);
+          return { success: true, data: newEntry };
+        }
+
+      case "update":
+        if (existingCity) {
+          const [results] = await sequelize.query(updateQuery);
+          return { success: true, results: results };
+        } else {
+          return { success: false, message: "City doesn't exists" };
+        }
+
+      case "delete":
+        if (existingCity) {
+          const [results] = await sequelize.query(deleteQuery);
+          return { success: true, results: results };
+        } else {
+          return { success: false, message: "City doesn't exists" };
+        }
+
+      default:
+        return { error: `Invalid entity: ${entity}` };
     }
   } catch (error) {
     console.error(`Error in addEntryService for City:`, error);

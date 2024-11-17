@@ -5,38 +5,6 @@ import countries from "../models/countries.js";
 import states from "../models/states.js";
 import cities from "../models/cities.js";
 
-export const updateCoords = async (req, res) => {
-  try {
-    const country = req.params.country;
-    const state = req.params.state;
-    const city = req.params.city;
-    const lat = parseFloat(req.params.lat);
-    const lon = parseFloat(req.params.lon);
-    const data = await databaseService.postUpdateCoords(
-      country,
-      state,
-      city,
-      lat,
-      lon
-    );
-    //res.json({ data });
-  } catch (error) {
-    res.status(500).json({ message: `test ${error.message}` });
-  }
-};
-
-export const deleteCity = async (req, res) => {
-  try {
-    const country = req.params.country;
-    const state = req.params.state;
-    const city = req.params.city;
-    const data = await databaseService.postDeleteCity(country, state, city);
-    //res.json({ data });
-  } catch (error) {
-    res.status(500).json({ message: `test ${error.message}` });
-  }
-};
-
 // TABLES -------------------------------------------------------------------------
 
 export const emptyTables = async (req, res) => {
@@ -160,7 +128,7 @@ export const addEntry = async (req, res) => {
 
     let result;
     if(table === 'city'){
-    result = await databaseService.CityEntryService(table, bodyParams, true);
+    result = await databaseService.CityEntryService(table, bodyParams, 'add');
     }
     else {
     // Call the generalized service for adding entries
@@ -181,6 +149,38 @@ export const addEntry = async (req, res) => {
   }
 };
 
+export const updateEntry = async (req, res) => {
+  try {
+    const { table } = req.params;  // Get the entity type (country, state, city)
+    const bodyParams = req.body;   // The data to be added
+
+    if (!bodyParams) {
+      return res.status(400).json({ message: "Body parameters are invalid" });
+    }
+
+    let result;
+    if(table === 'city'){
+    result = await databaseService.CityEntryService(table, bodyParams, 'update');
+    }
+    else {
+    // Call the generalized service for adding entries
+    result = await databaseService.updateEntryService(table, bodyParams);
+    }
+
+    if (result.success) {
+      return res.status(200).json({
+        message: `${table.charAt(0).toUpperCase() + table.slice(1)} updated successfully`,
+        data: result.data,
+      });
+    } else {
+      return res.status(500).json({ message: result.message || `Failed to update ${table}` });
+    }
+  } catch (error) {
+    console.error("Error in updateEntry controller:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const deleteEntry = async (req, res) => {
   try {
     const { table } = req.params;  // Get the entity type (country, state, city)
@@ -192,7 +192,7 @@ export const deleteEntry = async (req, res) => {
 
     let result;
     if(table === 'city'){
-     result = await databaseService.CityEntryService(table, bodyParams, false);
+     result = await databaseService.CityEntryService(table, bodyParams, 'delete');
     }
     else {
     // Call the generalized service for adding entries
