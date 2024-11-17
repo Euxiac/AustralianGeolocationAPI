@@ -293,9 +293,9 @@ export const deleteEntryService = async (entity, data) => {
         AND co.country_name = "${entityData.country_name}"
         `;
         // Check if state already exists
-        const existingState = await checkEntryExists(model, uniqueFields, data);
-        if (existingState) {
-          return { success: false, message: "State already exists" };
+        const existingCountry = await checkEntryExists(model, uniqueFields, data);
+        if (!existingCountry) {
+          return { success: false, message: "Country doesn't exists" };
         }
         break;
 
@@ -314,7 +314,11 @@ export const deleteEntryService = async (entity, data) => {
         st.state_name = "${entityData.state_name}"
         AND st.country = "${entityData.country}"
         `;
-        
+        // Check if state already exists
+        const existingState = await checkEntryExists(model, uniqueFields, data);
+        if (!existingState) {
+          return { success: false, message: "State doesn't exists" };
+        }
         break;
 
       case "city":
