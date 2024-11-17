@@ -168,95 +168,84 @@ export const postPopulate = async () => {
   }
 };
 
-export const addCountryService = async (data) => {
+export const addEntryService = async (entity, data) => {
   try {
-    const iso3 = data.iso3;
-    const iso2 = data.iso2;
-    const country_name = data.country_name;
-    // Check if the country already exists in the database
-    const existingCountry = await countries.findOne({
-      where: { iso3: iso3, iso2: iso2, country_name: country_name },
-    });
+    let result;
 
-    if (existingCountry) {
-      return { success: false, message: "Country already exists" };
+    let model;
+    let uniqueFields;
+    let createData;
+    let state_id;
+
+    switch (entity) {
+      case 'country':
+        model = countries;
+        uniqueFields = ['iso3', 'iso2', 'country_name'];
+        createData = {
+          iso3: data.iso3,
+          iso2: data.iso2,
+          country_name: data.country_name,
+        };
+        break;
+
+      case 'state':
+        model = states;
+        uniqueFields = ['state_name', 'country'];
+        createData = {
+          state_name: data.state_name,
+          country: data.country,
+        };
+        break;
+
+      case 'city':
+        model = cities;
+        uniqueFields = ['city_name', 'state_id'];
+
+        // Ensure country_iso3 and state_name are passed in
+        if (!data.country_iso3 || !data.state_name) {
+          return { success: false, message: "Country ISO3 or State Name is missing" };
+        }
+
+        // Find the state ID for the city
+        const stateQuery = await states.findOne({
+          where: { country: data.country_iso3, state_name: data.state_name },
+        });
+
+        // Handle case where state is not found
+        if (!stateQuery) {
+          return { success: false, message: "State not found for the given country" };
+        }
+
+        state_id = stateQuery.state_id;
+
+        // Check if the city already exists using the state_id
+        const existingCity = await cities.findOne({
+          where: { city_name: data.city_name, state_id: state_id },
+        });
+
+        if (existingCity) {
+          return { success: false, message: "City already exists" };
+        }
+
+        // Proceed to create the city entry
+        createData = {
+          city_name: data.city_name,
+          state_id: state_id,
+          lat: data.lat,
+          lon: data.lon,
+        };
+        break;
+
+      default:
+        return { success: false, message: `Invalid entity: ${entity}` };
     }
 
-    // Add the country to the database
-    const newCountry = await countries.create({
-      iso3: iso3,
-      iso2: iso2,
-      country_name: country_name,
-    });
+    // Create the new entry
+    const newEntry = await model.create(createData);
 
-    return { success: true, data: newCountry };
+    return { success: true, data: newEntry };
   } catch (error) {
-    console.error("Error in addCountryService:", error);
-    return { success: false, error: error.message };
-  }
-};
-
-export const addStateService = async (data) => {
-  try {
-    const state_name = data.state_name;
-    const country = data.country;
-    const existingState = await states.findOne({
-      where: { state_name: state_name, country: country },
-    });
-
-    if (existingState) {
-      return { success: false, message: "State already exists" };
-    }
-
-    const newState = await states.create({
-      state_name: state_name,
-      country: country,
-    });
-
-    return { success: true, data: newState };
-  } catch (error) {
-    console.error("Error in addStateService:", error);
-    return { success: false, error: error.message };
-  }
-};
-
-export const addCityService = async (data) => {
-  try {
-    const city_name = data.city_name;
-    const country_iso3 = data.country_iso3;
-    const state_name = data.state_name;
-    const stateQuery = await states.findOne({
-      where: { country: country_iso3, state_name: state_name },
-    });
-    const state_id = stateQuery ? stateQuery.state_id : null;
-    const lat = data.lat;
-    const lon = data.lon;
-    const existingCity = await cities.findOne({
-      where: { city_name: city_name, state_id: state_id },
-    });
-
-    if (existingCity) {
-      return { success: false, message: "City already exists" };
-    }
-
-    let newCity;
-    if (!lat & !lon) {
-      newCity = await cities.create({
-        city_name: city_name,
-        state_id: state_id,
-      });
-    } else {
-      newCity = await cities.create({
-        city_name: city_name,
-        state_id: state_id,
-        lat:lat,
-        lon:lon,
-      });
-    }
-
-    return { success: true, data: newCity };
-  } catch (error) {
-    console.error("Error in addCity:", error);
+    console.error(`Error in addEntryService for ${entity}:`, error);
     return { success: false, error: error.message };
   }
 };

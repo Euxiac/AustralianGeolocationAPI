@@ -151,47 +151,23 @@ export const redrawTablesWithData = async (req, res) => {
 // ENTRIES -------------------------------------------------------------------------
 export const addEntry = async (req, res) => {
   try {
-    const table = req.params.table; // The table name from URL parameter
-    const bodyParams = req.body; // The body parameters
+    const { table } = req.params;  // Get the entity type (country, state, city)
+    const bodyParams = req.body;   // The data to be added
 
-    // Validate input
     if (!bodyParams) {
       return res.status(400).json({ message: "Body parameters are invalid" });
     }
 
-    let result = null;
+    // Call the generalized service for adding entries
+    const result = await databaseService.addEntryService(table, bodyParams);
 
-    // Decide which service to run based on the table name
-    switch (table) {
-      case "country":
-        result = await databaseService.addCountryService(bodyParams);
-        break;
-
-      case "state":
-        result = await databaseService.addStateService(bodyParams);
-        break;
-
-      case "city":
-        result = await databaseService.addCityService(bodyParams);
-        break;
-
-      default:
-        return res
-          .status(400)
-          .json({ message: `Invalid table name: ${table}` });
-    }
-
-    // Handle response based on result
-    if (result && result.success) {
+    if (result.success) {
       return res.status(200).json({
-        message: `${table} added successfully`,
+        message: `${table.charAt(0).toUpperCase() + table.slice(1)} added successfully`,
         data: result.data,
       });
     } else {
-      // Handle failure
-      return res.status(500).json({
-        message: result?.message || `Failed to add ${table}`,
-      });
+      return res.status(500).json({ message: result.message || `Failed to add ${table}` });
     }
   } catch (error) {
     console.error("Error in addEntry controller:", error);
