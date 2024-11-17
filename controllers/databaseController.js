@@ -174,3 +174,30 @@ export const addEntry = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+export const deleteEntry = async (req, res) => {
+  try {
+    const { table } = req.params;  // Get the entity type (country, state, city)
+    const bodyParams = req.body;   // The data to be added
+
+    if (!bodyParams) {
+      return res.status(400).json({ message: "Body parameters are invalid" });
+    }
+
+    // Call the generalized service for adding entries
+    const result = await databaseService.deleteEntryService(table, bodyParams);
+
+    if (result.success) {
+      return res.status(200).json({
+        message: `${table.charAt(0).toUpperCase() + table.slice(1)} deleted successfully`,
+        data: result.data,
+      });
+    } else {
+      return res.status(500).json({ message: result.message || `Failed to delete ${table}` });
+    }
+  } catch (error) {
+    console.error("Error in deleteEntry controller:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+

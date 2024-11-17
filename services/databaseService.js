@@ -170,36 +170,56 @@ export const postPopulate = async () => {
 
 export const addEntryService = async (entity, data) => {
   try {
-    let result;
-
     let model;
     let uniqueFields;
     let createData;
     let state_id;
 
+    // Helper function to check if an entry exists
+    const checkEntryExists = async (model, uniqueFields, data) => {
+      const query = uniqueFields.reduce((acc, field) => {
+        acc[field] = data[field];
+        return acc;
+      }, {});
+      const existingEntry = await model.findOne({ where: query });
+      return existingEntry;
+    };
+
     switch (entity) {
-      case 'country':
+      case "country":
         model = countries;
-        uniqueFields = ['iso3', 'iso2', 'country_name'];
+        uniqueFields = ["iso3", "iso2", "country_name"];
         createData = {
           iso3: data.iso3,
           iso2: data.iso2,
           country_name: data.country_name,
         };
+
+        // Check if country already exists
+        const existingCountry = await checkEntryExists(model, uniqueFields, data);
+        if (existingCountry) {
+          return { success: false, message: "Country already exists" };
+        }
         break;
 
-      case 'state':
+      case "state":
         model = states;
-        uniqueFields = ['state_name', 'country'];
+        uniqueFields = ["state_name", "country"];
         createData = {
           state_name: data.state_name,
           country: data.country,
         };
+
+        // Check if state already exists
+        const existingState = await checkEntryExists(model, uniqueFields, data);
+        if (existingState) {
+          return { success: false, message: "State already exists" };
+        }
         break;
 
-      case 'city':
+      case "city":
         model = cities;
-        uniqueFields = ['city_name', 'state_id'];
+        uniqueFields = ["city_name", "state_id"];
 
         // Ensure country_iso3 and state_name are passed in
         if (!data.country_iso3 || !data.state_name) {
@@ -219,15 +239,11 @@ export const addEntryService = async (entity, data) => {
         state_id = stateQuery.state_id;
 
         // Check if the city already exists using the state_id
-        const existingCity = await cities.findOne({
-          where: { city_name: data.city_name, state_id: state_id },
-        });
-
+        const existingCity = await checkEntryExists(model, uniqueFields, { ...data, state_id });
         if (existingCity) {
           return { success: false, message: "City already exists" };
         }
 
-        // Proceed to create the city entry
         createData = {
           city_name: data.city_name,
           state_id: state_id,
@@ -246,6 +262,118 @@ export const addEntryService = async (entity, data) => {
     return { success: true, data: newEntry };
   } catch (error) {
     console.error(`Error in addEntryService for ${entity}:`, error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const deleteEntryService = async (entity, data) => {
+  try {
+    let result;
+
+    let model;
+    let uniqueFields;
+    let entityData;
+    let state_id;
+    let query;
+
+    switch (entity) {
+      case "country":
+        model = countries;
+        uniqueFields = ["iso3", "iso2", "country_name"];
+        entityData = {
+          iso3: data.iso3,
+          iso2: data.iso2,
+          country_name: data.country_name,
+        };
+        query = `
+        DELETE co
+        FROM countries co
+
+        WHERE 
+        co.iso3 = "${entityData.iso3}"
+        AND co.country_name = "${entityData.country_name}"
+        `;
+        break;
+
+      case "state":
+        model = states;
+        uniqueFields = ["state_name", "country"];
+        entityData = {
+          state_name: data.state_name,
+          country: data.country,
+        };
+        query = `
+        DELETE st
+        FROM states st
+
+        WHERE 
+        st.state_name = "${entityData.state_name}"
+        AND st.country = "${entityData.country}"
+        `;
+        break;
+
+      case "city":
+        model = cities;
+        uniqueFields = ["city_name", "state_id"];
+
+        // Ensure country_iso3 and state_name are passed in
+        if (!data.country_iso3 || !data.state_name) {
+          return {
+            success: false,
+            message: "Country ISO3 or State Name is missing",
+          };
+        }
+
+        // Find the state ID for the city
+        const stateQuery = await states.findOne({
+          where: { country: data.country_iso3, state_name: data.state_name },
+        });
+
+        // Handle case where state is not found
+        if (!stateQuery) {
+          return {
+            success: false,
+            message: "State not found for the given country",
+          };
+        }
+
+        state_id = stateQuery.state_id
+
+        entityData = {
+          city_name: data.city_name,
+          state_id: state_id,
+          lat: data.lat,
+          lon: data.lon,
+        };
+
+        query = `
+        DELETE ci
+        FROM cities ci
+
+        JOIN states st
+        ON ci.state_id = st.state_id
+
+        JOIN countries co
+        ON st.country = co.iso3
+
+        WHERE 
+        co.iso3 = "${data.country_iso3}"
+        AND st.state_name = "${data.state_name}"
+        AND ci.city_name = "${entityData.city_name}";
+        `;
+
+        break;
+
+      default:
+        return { success: false, message: `Invalid entity: ${entity}` };
+    }
+
+    //delete
+    const [results] = await sequelize.query(query);
+
+    return { success: true , results: results};
+  } catch (error) {
+    console.error(`Error in deleteEntryService for ${entity}:`, error);
     return { success: false, error: error.message };
   }
 };

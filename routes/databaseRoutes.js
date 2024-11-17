@@ -33,6 +33,10 @@ router.post("/tables/redraw/:dataset", databaseController.redrawTablesWithData);
 //adds entries
 router.post("/entries/add-:table", databaseController.addEntry);
 
+router.post("/entries/delete-:table", databaseController.deleteEntry);
+
+//router.post("/entries/update-:table", databaseController.updateEntry);
+
 router.post(
   "/entries/update-coords/:country/:state/:city/:lat/:lon",
   databaseController.updateCoords
