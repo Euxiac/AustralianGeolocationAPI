@@ -61,14 +61,49 @@ export const getAllCountries = async () => {
         ON st.country = co.iso3
   
         WHERE 
-          ci.city_name = "${city}"
-            AND st.state_name = "${state}"
-            AND co.iso3 = "${country}"
-      `);
+        ci.city_name = "${city}"  
+        AND st.state_name = "${state}"
+        AND co.iso3 = "${country}"
+      `);;
+      
       return results;
     } catch (error) {
       throw new Error(
         `Error fetching test data: ${error.message}`
+      );
+    }
+  };
+
+  export const convertCountry = async (operation, query) => {
+    try {
+      console.log("run");
+      console.log(operation, query);
+      let sqlQuery;
+      switch (operation) {
+        case 'country_name':
+        sqlQuery = `
+        SELECT countries.country_name FROM countries
+        WHERE countries.iso3 = "${query}"
+      `;
+            break;
+
+        case 'iso3':
+          sqlQuery = `
+          SELECT countries.iso3 FROM countries
+          WHERE countries.country_name = "${query}"
+        `
+              break;
+    
+        default:
+          console.log('here');
+          break;
+    }
+
+      const [results] = await sequelize.query(sqlQuery);
+      return results;
+    } catch (error) {
+      throw new Error(
+        `Error fetching data: ${error.message}`
       );
     }
   };

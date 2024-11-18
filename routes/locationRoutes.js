@@ -18,4 +18,6 @@ router.get('/cities', locationController.fetchAllCities);
 
 router.get('/query/:country/:state/:city', locationController.fetchFromQuery);
 
+router.get('/convert/:operation/:query', locationController.convert);
+
 export default router; 

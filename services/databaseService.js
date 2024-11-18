@@ -1,8 +1,8 @@
 import sequelize from "../config/database.js";
-import axios from "axios";
 import countries from "../models/countries.js";
 import states from "../models/states.js";
 import cities from "../models/cities.js";
+
 
 export const postRedraw = async () => {
   try {
@@ -115,6 +115,27 @@ export const postPopulateWithMockData = async () => {
 
 export const postPopulate = async () => {
   try {
+    // Insert countries
+    await sequelize.query(`
+      INSERT INTO countries (iso3, iso2, country_name)
+      VALUES
+        ('aus', 'au', 'australia');
+    `);
+
+    // Insert states
+    await sequelize.query(`
+      INSERT INTO states (state_name, country)
+      VALUES
+        ('australian capital territory', 'aus');
+    `);
+
+    // Insert cities
+    await sequelize.query(`
+      INSERT INTO cities (city_name, state_id, lat, lon)
+        VALUES
+          ('perth', 2, -31.9558933, 115.8605855);
+    `);
+
     return "Populated data successfully!";
   } catch (error) {
     throw new Error(`Error creating tables: ${error.message}`);
