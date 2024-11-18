@@ -20,7 +20,9 @@ import * as locationService from '../services/locationService.js';
 
   export const fetchAllCities = async (req, res) => {
     try {
-      const data = await locationService.getAllCities();
+      const limit = req.params.limit;
+      const page = req.params.page;
+      const data = await locationService.getAllCities(limit, page);
       res.json({data});
     } catch (error) {
       res.status(500).json({message: `test ${error.message}`});

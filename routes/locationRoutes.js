@@ -14,7 +14,7 @@ router.get('/countries', locationController.fetchAllCountries);
 
 router.get('/states', locationController.fetchAllStates);
 
-router.get('/cities', locationController.fetchAllCities);
+router.get('/cities/limit-:limit/page-:page', locationController.fetchAllCities);
 
 router.get('/query/:country/:state/:city', locationController.fetchFromQuery);
 

@@ -26,12 +26,12 @@ export const getAllCountries = async () => {
     }
   };
 
-  export const getAllCities = async () => {
+  export const getAllCities = async (limit, page) => {
     try {
       const [results] = await sequelize.query(`
         SELECT * FROM geolocation_database.cities;
       `);
-      return results;
+      return results.slice(page * limit, (parseInt(page)+1) * limit);
     } catch (error) {
       throw new Error(
         `Error fetching test data: ${error.message}`
@@ -76,8 +76,6 @@ export const getAllCountries = async () => {
 
   export const convertCountry = async (operation, query) => {
     try {
-      console.log("run");
-      console.log(operation, query);
       let sqlQuery;
       switch (operation) {
         case 'country_name':
@@ -95,7 +93,6 @@ export const getAllCountries = async () => {
               break;
     
         default:
-          console.log('here');
           break;
     }
 

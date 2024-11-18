@@ -37,25 +37,26 @@ export const populateWithMockData = async (req, res) => {
 export const populateFromAPI = async (req, res) => {
   try {
     // Step 1: Fetch the states from the external API by calling the /fetchStatesInCountry route
-    const supportedCountries = ['australia','singapore'];
+    const supportedCountries = ["australia"];
     let countryData = [];
     let stateData = [];
     let cityData = [];
 
+    //COUNTRY------------------------------------------------------------------------------------------
     // Loop through the supported countries and fetch country data
     for (let i = 0; i < supportedCountries.length; i++) {
-      const apiURL= `http://localhost:8000/api/fetch-states/${supportedCountries[i]}`;
+      const apiURL = `http://localhost:8000/api/fetch-states/${supportedCountries[i]}`;
       const apiResponse = await axios.post(apiURL);
       countryData.push(apiResponse.data);
     }
-    
+
     // Step 2.A: Prepare the data for insertion into the database
     const countryPromises = countryData.map(async (data) => {
       // Prepare requestBody for adding country to the database
       const requestBody = {
-        'iso3': data.data.iso3.toLowerCase(),
-        'iso2': data.data.iso2.toLowerCase(),
-        'country_name': data.data.name.toLowerCase(),
+        iso3: data.data.iso3.toLowerCase(),
+        iso2: data.data.iso2.toLowerCase(),
+        country_name: data.data.name.toLowerCase(),
       };
 
       // URL for adding the country
@@ -70,24 +71,25 @@ export const populateFromAPI = async (req, res) => {
         return null; // Handle error and return null or an error message
       }
     });
-    
+
+    //STATES------------------------------------------------------------------------------------------
     // Loop through the countrydata and seperate states data in one [] per country
     for (let c = 0; c < countryData.length; c++) {
       for (let s = 0; s < countryData[c].data.states.length; s++) {
-        countryData[c].data.states[s]['iso3'] = countryData[c].data.iso3;
+        countryData[c].data.states[s]["iso3"] = countryData[c].data.iso3;
         stateData.push(countryData[c].data.states[s]);
       }
     }
 
-     // Step 2.A: Prepare the data for insertion into the database
-     const statePromises = stateData.map(async (data) => {
+    // Step 2.A: Prepare the data for insertion into the database
+    const statePromises = stateData.map(async (data) => {
       // Prepare requestBody for adding country to the database
       const requestBody = {
-        "state_name": data.name.toLowerCase(),
-        "country": data.iso3.toLowerCase()
+        state_name: data.name.toLowerCase(),
+        country: data.iso3.toLowerCase(),
       };
 
-      // URL for adding the country
+      // URL for adding the state
       const addCountryURL = `http://localhost:8000/database/entries/add-state`;
       try {
         // Send the request to add country
@@ -100,17 +102,53 @@ export const populateFromAPI = async (req, res) => {
       }
     });
 
+    //CITIES------------------------------------------------------------------------------------------
     // Loop through the states in stateData and fetch city data
     for (let i = 0; i < stateData.length; i++) {
-      const apiURL= `http://localhost:8000/api/fetch-cities/${stateData[i].iso3}/${stateData[i].name}`;
+      const response = await axios.get(
+        `http://localhost:8000/location/convert/country_name/${stateData[i].iso3}`
+      );
+      const country_name = response.data.data[0].country_name;
+
+      const apiURL = `http://localhost:8000/api/fetch-cities/${country_name}/${stateData[i].name}`;
       const apiResponse = await axios.post(apiURL);
       cityData.push(apiResponse.data);
+      cityData[i]["state_name"] = stateData[i].name;
+      cityData[i]["country_iso3"] = stateData[i].iso3;
     }
+
+    //console.log(cityData[0]);
+
+    // Step 2.A: Prepare the data for insertion into the database
+    const cityPromises = cityData.map(async (data) => {
+      const cityNames = data.data;
+
+      for (let i = 0; i < cityNames.length; i++) {
+        // Prepare requestBody for adding country to the database
+        const requestBody = {
+          city_name: cityNames[i],
+          country_iso3: data.country_iso3,
+          state_name: data.state_name,
+        };
+        //console.log(requestBody);
+        
+        // URL for adding the city
+        const addCityURL = `http://localhost:8000/database/entries/add-city`;
+        try {
+          // Send the request to add city
+          const response = await axios.post(addCityURL, requestBody);
+          console.log(`Successfully added country: ${cityNames[i]}`);
+        } 
+        catch (error) {
+          console.error(`Error adding country: ${cityNames[i]}`, error.message);
+        }
+      }
+    });
 
     // Wait for all the requests to finish
     const results = await Promise.all(countryPromises, statePromises);
 
-      res.json({ message: 'Countries populated successfully', results , countryData, stateData, cityData });
+    //res.json({ message: 'Countries populated successfully', results , countryData, stateData, cityData });
   } catch (error) {
     res.status(500).json({ message: `error ${error.message}` });
   }
@@ -180,7 +218,6 @@ export const redrawTablesWithData = async (req, res) => {
       // If tables are not empty, return this response
       return res.send("Tables are already filled");
     }
-    console.log("=== SEQUENCE END ==-----------------------");
   } catch (error) {
     console.error("Error redraw tables with data:", error);
     return res.status(500).json({ message: "Error redraw tables with data" });
